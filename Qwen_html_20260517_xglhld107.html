@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>MMP Planning</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#f5f7fa;--bg-secondary:#fff;--bg-tertiary:#f8f9fb;--text:#0a1128;--text-secondary:#5b6a7a;--text-tertiary:#94a3b8;--accent:#0066ff;--accent-light:#e8f0ff;--accent-gradient:linear-gradient(135deg,#0066ff,#0044aa);--success:#00d084;--warning:#ffb800;--danger:#ff4757;--border:rgba(0,0,0,0.06);--shadow-sm:0 2px 8px rgba(0,0,0,0.04);--radius:16px;--radius-sm:12px;--radius-xs:8px;--wl-login-bg:rgba(255,255,255,0.92);--wl-overlay:0.5;--wl-blur:12px;--wl-bg:none}
+    [data-theme="dark"]{--bg:#0f1219;--bg-secondary:#1a1f2e;--bg-tertiary:#151a26;--text:#f8fafc;--text-secondary:#94a3b8;--text-tertiary:#64748b;--accent:#3b82f6;--accent-light:rgba(59,130,246,0.15);--border:rgba(255,255,255,0.08)}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+    button{font-family:inherit;cursor:pointer;border:none;background:none}
+    input,select{font-family:inherit}
+    ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:var(--text-tertiary);border-radius:3px}
+
+    .btn{padding:10px 16px;border-radius:var(--radius-sm);font-weight:500;font-size:14px;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+    .btn:active{transform:scale(.97)}
+    .btn.primary{background:var(--accent-gradient);color:#fff;box-shadow:0 4px 12px rgba(0,102,255,0.25)}
+    .btn.ghost{background:var(--bg-tertiary);color:var(--text);border:1px solid var(--border)}
+    .btn.ghost:hover{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
+    .btn.danger{background:var(--danger);color:#fff}
+    .btn.success{background:var(--success);color:#fff}
+    .btn.icon-btn{width:40px;height:40px;padding:0;justify-content:center;border-radius:50%}
+
+    .card{background:var(--bg-secondary);border-radius:var(--radius);padding:20px;border:1px solid var(--border);box-shadow:var(--shadow-sm);transition:all .3s}
+    .card:hover{box-shadow:0 4px 20px rgba(0,0,0,0.06);transform:translateY(-2px)}
+    .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+    .card-title{font-size:16px;font-weight:600}.card-subtitle{font-size:13px;color:var(--text-secondary);margin-top:4px}
+
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px}
+    .kpi-card{background:var(--accent-gradient);color:#fff;border-radius:var(--radius);padding:18px;position:relative;overflow:hidden;box-shadow:0 8px 24px rgba(0,102,255,0.2);min-height:110px;display:flex;flex-direction:column;justify-content:space-between}
+    .kpi-card.success{background:linear-gradient(135deg,#00d084,#009966);box-shadow:0 8px 24px rgba(0,208,132,0.2)}
+    .kpi-card.warning{background:linear-gradient(135deg,#ffb800,#e6a600);box-shadow:0 8px 24px rgba(255,184,0,0.2)}
+    .kpi-card.danger{background:linear-gradient(135deg,#ff4757,#cc3344);box-shadow:0 8px 24px rgba(255,71,87,0.2)}
+    .kpi-card::after{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;background:rgba(255,255,255,0.15);border-radius:50%}
+    .kpi-value{font-size:26px;font-weight:700;margin-top:auto}.kpi-label{font-size:13px;opacity:.85}
+
+    #login-screen{position:fixed;inset:0;z-index:1000;background:var(--wl-bg);background-size:cover;display:flex;align-items:center;justify-content:center}
+    #login-screen::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,var(--wl-overlay));backdrop-filter:blur(var(--wl-blur));z-index:1}
+    .login-container{position:relative;z-index:10;width:100%;max-width:360px;padding:20px}
+    .login-box{background:var(--wl-login-bg);border-radius:22px;padding:28px 22px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.25);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.25);text-align:center}
+    .login-logo{width:60px;height:60px;background:var(--accent-gradient);color:#fff;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;margin:0 auto 10px;font-family:'JetBrains Mono',monospace;box-shadow:0 8px 24px rgba(0,102,255,0.35)}
+    
+    /* ✅ INPUT CORRIGÉ (z-index garanti) */
+    .pin-input{width:100%;padding:10px;border:1px solid var(--border);border-radius:12px;background:var(--bg-tertiary);text-align:center;letter-spacing:4px;font-size:18px;margin-bottom:12px;font-family:'JetBrains Mono',monospace;z-index:2;position:relative}
+    
+    .pin-display{background:var(--bg-tertiary);border-radius:12px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:22px;letter-spacing:10px;text-align:center;margin-bottom:18px;border:1px solid var(--border);min-height:58px;display:flex;align-items:center;justify-content:center}
+    .pin-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px}
+    .pin-key{padding:16px 10px;border-radius:12px;font-size:18px;font-weight:500;background:var(--bg-tertiary);border:1px solid var(--border);transition:all .15s}
+    .pin-key:hover{background:var(--accent-light);border-color:var(--accent)}
+    .pin-key:active{transform:scale(.96);background:var(--accent);color:#fff}
+    .login-actions{display:flex;gap:9px}.login-actions .btn{flex:1;padding:13px;justify-content:center}
+
+    #app-screen{display:none;flex:1;flex-direction:column;min-height:100vh;padding-bottom:76px}
+    header{background:var(--bg-secondary);padding:14px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+    .header-inner{display:flex;align-items:center;justify-content:space-between;max-width:1100px;margin:0 auto}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand-logo{width:34px;height:34px;background:var(--accent-gradient);color:#fff;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'JetBrains Mono',monospace}
+    .brand-text h1{font-size:17px;font-weight:600;line-height:1.1}
+    .brand-text small{font-size:11px;color:var(--text-secondary);font-weight:400}
+    .header-actions{display:flex;gap:6px;align-items:center}
+
+    .nav-tabs{display:flex;gap:4px;padding:0 14px;margin:14px 0;overflow-x:auto;scrollbar-width:none}
+    .nav-tabs::-webkit-scrollbar{display:none}
+    .nav-tab{padding:9px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;color:var(--text-secondary);white-space:nowrap;transition:all .2s}
+    .nav-tab.active{color:var(--accent);background:var(--accent-light);font-weight:600}
+
+    main{flex:1;padding:0 14px 28px;max-width:1100px;margin:0 auto;width:100%}
+    .view{display:none;animation:fadeSlide .25s ease}.view.active{display:block}
+    @keyframes fadeSlide{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+    .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-secondary);border-top:1px solid var(--border);padding:8px 12px calc(8px + env(safe-area-inset-bottom));display:flex;justify-content:space-around;z-index:100;backdrop-filter:blur(12px)}
+    .bottom-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 10px;border-radius:10px;color:var(--text-tertiary);font-size:11px;font-weight:500;transition:.2s}
+    .bottom-btn svg{width:20px;height:20px}
+    .bottom-btn.active{color:var(--accent)}
+
+    #admin-panel{position:fixed;top:0;right:0;width:340px;max-width:85vw;height:100vh;background:var(--bg-secondary);border-left:1px solid var(--border);transform:translateX(100%);transition:.3s cubic-bezier(.4,0,.2,1);z-index:900;display:flex;flex-direction:column;box-shadow:-10px 0 40px rgba(0,0,0,0.1)}
+    #admin-panel.open{transform:translateX(0)}
+    .admin-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);z-index:899;opacity:0;pointer-events:none;transition:.3s}
+    .admin-overlay.visible{opacity:1;pointer-events:auto}
+    .admin-header{padding:18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+    .admin-tabs{display:flex;overflow-x:auto;border-bottom:1px solid var(--border);padding:0 10px}
+    .admin-tab-btn{padding:10px 6px;color:var(--text-secondary);font-size:12px;white-space:nowrap;border-bottom:2px solid transparent}
+    .admin-tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
+    .admin-content{flex:1;overflow-y:auto;padding:14px}
+    .admin-section{display:none}.admin-section.active{display:block;animation:fadeSlide .2s ease}
+
+    fieldset{border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;background:var(--bg-tertiary)}
+    legend{font-weight:600;padding:0 6px;font-size:13px;color:var(--text)}
+    label{display:block;margin-bottom:8px;font-size:12px;color:var(--text-secondary)}
+    input[type="text"],input[type="number"],select{width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:var(--radius-xs);background:var(--bg-secondary);color:var(--text);font-size:13px;margin-top:5px}
+    input[type="color"]{width:100%;height:36px;padding:2px;border-radius:7px;border:1px solid var(--border)}
+    input[type="range"]{width:100%;margin:6px 0}
+    .range-val{float:right;font-weight:500;color:var(--text);font-size:12px}
+    .theme-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
+    .theme-preset{padding:10px;border-radius:var(--radius-xs);border:2px solid var(--border);background:var(--bg-secondary);cursor:pointer;transition:.2s;text-align:center;font-size:12px}
+    .theme-preset.active{border-color:var(--accent);background:var(--accent-light);font-weight:500}
+
+    .list-item{display:flex;align-items:center;gap:10px;padding:12px;border-radius:var(--radius-sm);background:var(--bg-secondary);border:1px solid var(--border);margin-bottom:7px;transition:all .2s}
+    .list-item:hover{box-shadow:var(--shadow-sm);transform:translateX(3px)}
+    .list-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+    .list-content{flex:1;min-width:0}
+    .list-title{font-weight:500;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+    .list-meta{font-size:11px;color:var(--text-secondary)}
+    .badge{padding:3px 7px;border-radius:5px;font-size:10px;font-weight:600}
+    .badge.success{background:rgba(0,208,132,0.15);color:var(--success)}
+    .badge.warning{background:rgba(255,184,0,0.15);color:var(--warning)}
+    .badge.danger{background:rgba(255,71,87,0.15);color:var(--danger)}
+    .badge.info{background:var(--accent-light);color:var(--accent)}
+
+    .kanban-board{display:flex;gap:14px;overflow-x:auto;padding-bottom:14px;scroll-snap-type:x mandatory}
+    .kanban-col{flex:0 0 260px;min-height:380px;background:var(--bg-tertiary);border-radius:var(--radius);padding:10px;scroll-snap-align:start}
+    .kanban-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:0 3px}
+    .kanban-title{font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px}
+    .kanban-count{background:var(--bg-secondary);padding:2px 7px;border-radius:8px;font-size:11px}
+    .kanban-card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px;cursor:grab;transition:all .2s;box-shadow:var(--shadow-sm)}
+    .kanban-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+    .kanban-card.dragging{opacity:.5;transform:rotate(2deg)}
+    .kanban-card-title{font-weight:500;margin-bottom:6px;font-size:13px}
+    .kanban-card-meta{font-size:11px;color:var(--text-secondary);display:flex;justify-content:space-between;align-items:center}
+
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);z-index:800;display:none;align-items:center;justify-content:center;padding:18px}
+    .modal-overlay.active{display:flex}
+    .modal{background:var(--bg-secondary);border-radius:18px;width:100%;max-width:440px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,0.2);animation:modalIn .25s ease}
+    @keyframes modalIn{from{opacity:0;transform:scale(.92) translateY(15px)}to{opacity:1;transform:scale(1) translateY(0)}}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+    .modal-title{font-size:16px;font-weight:600}
+    .modal-actions{display:flex;gap:9px;margin-top:16px}
+    .modal-actions .btn{flex:1;padding:11px;justify-content:center}
+
+    .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--text);color:var(--bg);padding:10px 20px;border-radius:11px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transition:all .3s ease;box-shadow:var(--shadow-lg);backdrop-filter:blur(10px)}
+    .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+    .toast.success{background:var(--success);color:#fff}
+    .toast.error{background:var(--danger);color:#fff}
+
+    @media(max-width:700px){.kpi-grid{grid-template-columns:1fr 1fr;gap:10px}.header-actions .btn span{display:none}.nav-tabs{padding:0 10px}main{padding:0 10px 90px}.kanban-col{flex:0 0 240px}}
+    @media(max-width:400px){.kpi-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div id="login-screen">
+    <div class="login-container">
+      <div class="login-box">
+        <div class="login-logo" id="wl-icon-display">M</div>
+        <h2 style="margin:4px 0 4px;font-size:20px;font-weight:600;" id="wl-title-display">MMP Planning</h2>
+        <p style="color:var(--text-secondary);margin:0 0 16px;font-size:13px;" id="wl-sub-display">Pilotage atelier</p>
+        
+        <!-- ✅ TRIGRAMME (sans oninput inline pour éviter les conflits) -->
+        <input type="text" id="trig-input" maxlength="3" class="pin-input"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="text"
+          name="trig_noautofill_xk9" data-lpignore="true" data-1p-ignore="true" data-form-type="other"
+          placeholder="TRIGRAMME">
+        
+        <div class="pin-display" id="pin-display">••••</div>
+        <div class="pin-keypad">
+          <button class="pin-key" onclick="typePin('1')">1</button><button class="pin-key" onclick="typePin('2')">2</button><button class="pin-key" onclick="typePin('3')">3</button>
+          <button class="pin-key" onclick="typePin('4')">4</button><button class="pin-key" onclick="typePin('5')">5</button><button class="pin-key" onclick="typePin('6')">6</button>
+          <button class="pin-key" onclick="typePin('7')">7</button><button class="pin-key" onclick="typePin('8')">8</button><button class="pin-key" onclick="typePin('9')">9</button>
+          <button class="pin-key" style="visibility:hidden"></button><button class="pin-key" onclick="typePin('0')">0</button><button class="pin-key" onclick="clearPin()">⌫</button>
+        </div>
+        <div class="login-actions">
+          <button class="btn ghost" onclick="clearPin()">Annuler</button>
+          <button class="btn primary" onclick="login()">Connexion →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="app-screen">
+    <header><div class="header-inner">
+      <div class="brand">
+        <button class="btn icon-btn ghost" onclick="toggleAdmin()">☰</button>
+        <div class="brand-logo" id="header-icon">M</div>
+        <div class="brand-text"><h1 id="header-title">MMP Planning</h1><small id="header-sub">Pilotage atelier</small></div>
+      </div>
+      <div class="header-actions">
+        <button class="btn ghost" onclick="importData()">📥 <span>Importer</span></button>
+        <button class="btn ghost" onclick="exportData()">📤 <span>Exporter</span></button>
+        <button class="btn success" onclick="saveAllState()">💾 <span>Enregistrer</span></button>
+      </div>
+    </div></header>
+    
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-view="accueil">◈ Accueil</button>
+      <button class="nav-tab" data-view="of">≡ OF</button>
+      <button class="nav-tab" data-view="kanban">⧉ Kanban</button>
+      <button class="nav-tab" data-view="kpi">⌗ KPI</button>
+    </div>
+
+    <main>
+      <div id="view-accueil" class="view active">
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-label">OF en cours</div><div class="kpi-value" id="kpi-ongoing">0</div></div>
+          <div class="kpi-card success"><div class="kpi-label">Terminés</div><div class="kpi-value" id="kpi-done">0</div></div>
+          <div class="kpi-card warning"><div class="kpi-label">Retards</div><div class="kpi-value" id="kpi-late">0</div></div>
+          <div class="kpi-card danger"><div class="kpi-label">Charge</div><div class="kpi-value" id="kpi-charge">--</div></div>
+        </div>
+        <div class="card"><div class="card-header"><div><div class="card-title">Activité récente</div><div class="card-subtitle">Dernières actions synchronisées</div></div></div><div id="recent-activity" style="color:var(--text-secondary);font-size:13px;">En attente de connexion...</div></div>
+      </div>
+      <div id="view-of" class="view"><div class="card"><div class="card-header"><div class="card-title">Ordres de Fabrication</div><button class="btn primary" onclick="openModal('of-modal')">＋ Nouvel OF</button></div><div id="of-list"></div></div></div>
+      <div id="view-kanban" class="view"><div class="kanban-board" id="kanban-board"></div></div>
+      <div id="view-kpi" class="view">
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-label">TRG Global</div><div class="kpi-value">76%</div></div>
+          <div class="kpi-card success"><div class="kpi-label">Qualité</div><div class="kpi-value">94%</div></div>
+          <div class="kpi-card warning"><div class="kpi-label">Disponibilité</div><div class="kpi-value">89%</div></div>
+          <div class="kpi-card danger"><div class="kpi-label">Performance</div><div class="kpi-value">82%</div></div>
+        </div>
+        <div class="card"><div class="card-title">Historique & Présence</div><div id="kpi-sync-status" style="color:var(--text-secondary);font-size:13px;margin-top:8px;">Mode local</div></div>
+      </div>
+    </main>
+
+    <div class="bottom-nav">
+      <button class="bottom-btn active" data-view="accueil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>Accueil</button>
+      <button class="bottom-btn" data-view="of"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>OF</button>
+      <button class="bottom-btn" data-view="kanban"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Kanban</button>
+      <button class="bottom-btn" data-view="kpi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>KPI</button>
+    </div>
+  </div>
+
+  <div class="admin-overlay" id="admin-overlay" onclick="toggleAdmin()"></div>
+  <div id="admin-panel">
+    <div class="admin-header"><h3>⚙ Administration</h3><button class="btn icon-btn ghost" onclick="toggleAdmin()">✕</button></div>
+    <div class="admin-tabs">
+      <button class="admin-tab-btn active" data-admin="tab-vue">📊 Vue</button>
+      <button class="admin-tab-btn" data-admin="tab-apparence">🎨 Apparence</button>
+      <button class="admin-tab-btn" data-admin="tab-users">👥 Utilisateurs</button>
+      <button class="admin-tab-btn" data-admin="tab-data">💾 Données</button>
+    </div>
+    <div class="admin-content">
+      <div id="tab-vue" class="admin-section active">
+        <fieldset><legend>📐 Dashboard</legend><label><input type="checkbox" id="cfg-show-kpi" checked> Afficher KPIs</label><label><input type="checkbox" id="cfg-show-activity" checked> Afficher activité</label></fieldset>
+      </div>
+      <div id="tab-apparence" class="admin-section">
+        <fieldset><legend>🏷 Identité</legend><label>Nom <input type="text" id="wl-name" value="MMP Planning"></label><label>Sous-titre <input type="text" id="wl-subtitle" value="Pilotage atelier"></label><label>Icône <input type="text" id="wl-icon" maxlength="1" value="M"></label></fieldset>
+        <fieldset><legend>🎨 Couleurs</legend><label>Accent <input type="color" id="wl-accent" value="#0066ff"></label><label>Rayon <span class="range-val" id="radius-val">16px</span><input type="range" id="wl-radius" min="0" max="24" value="16"></label></fieldset>
+        <fieldset><legend>🔐 Connexion</legend><label>Overlay <span class="range-val" id="overlay-val">50%</span><input type="range" id="wl-overlay" min="0" max="90" value="50"></label><label>Flou <span class="range-val" id="blur-val">12px</span><input type="range" id="wl-blur" min="0" max="30" value="12"></label></fieldset>
+        <fieldset><legend>✨ Thèmes</legend><div class="theme-grid" id="theme-grid"><div class="theme-preset" data-preset="light">☀️ Clair</div><div class="theme-preset" data-preset="dark">🌙 Sombre</div><div class="theme-preset" data-preset="blue">🌊 Bleu</div></div></fieldset>
+        <div style="display:flex;gap:9px;margin-top:14px;"><button class="btn danger" style="flex:1;" onclick="resetWL()">↺ Réinitialiser</button><button class="btn primary" style="flex:2;" onclick="saveWL()">💾 Enregistrer</button></div>
+      </div>
+      <div id="tab-users" class="admin-section">
+        <fieldset><legend>➕ Ajouter un utilisateur</legend>
+          <label>Trigramme <input type="text" id="new-trig" maxlength="3" placeholder="ABC"></label>
+          <label>Nom affiché <input type="text" id="new-name" placeholder="Jean Dupont"></label>
+          <label>PIN (4 chiffres) <input type="text" id="new-pin" maxlength="4" placeholder="1234"></label>
+          <label>Rôle <select id="new-role"><option value="op">Opérateur</option><option value="admin">Admin</option></select></label>
+          <button class="btn primary" style="width:100%;margin-top:8px;justify-content:center;" onclick="addUser()">➕ Créer l'accès</button>
+        </fieldset>
+        <fieldset><legend>📋 Comptes actifs</legend><div id="user-list"></div></fieldset>
+      </div>
+      <div id="tab-data" class="admin-section">
+        <div class="card"><div class="card-title">💾 Données & Sync</div><p style="color:var(--text-secondary);margin:6px 0 12px;font-size:12px;">Sauvegarde locale. Les données sont conservées même après fermeture du navigateur.</p>
+          <button class="btn ghost" style="width:100%;justify-content:center;margin-bottom:7px;" onclick="saveAllState()">💾 Forcer la sauvegarde</button>
+          <button class="btn ghost" style="width:100%;justify-content:center;margin-bottom:7px;" onclick="exportData()">📤 Exporter JSON</button>
+          <button class="btn ghost" style="width:100%;justify-content:center;" onclick="document.getElementById('import-file').click()">📥 Importer JSON</button>
+          <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importJSON(this)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="of-modal">
+    <div class="modal">
+      <div class="modal-header"><div class="modal-title">Nouvel Ordre de Fabrication</div><button class="btn icon-btn" onclick="closeModal('of-modal')">✕</button></div>
+      <label>N° OF <input type="text" id="of-id" placeholder="OF-2026-001"></label>
+      <label>Désignation <input type="text" id="of-desc" placeholder="Usinage pièce A..."></label>
+      <label>Zone / Machine <input type="text" id="of-zone" placeholder="FRAISEUSE-01"></label>
+      <label>Opérateur <input type="text" id="of-op" placeholder="Trigramme"></label>
+      <div class="modal-actions"><button class="btn ghost" onclick="closeModal('of-modal')">Annuler</button><button class="btn primary" onclick="addOF()">Créer l'OF</button></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    /* 🗃️ STATE GLOBAL */
+    const S = {
+      accounts: { ADMIN: { pin: "1498", role: "admin", name: "Admin" }, DEMO: { pin: "1234", role: "op", name: "Opérateur" } },
+      ofs: {}, kanban: { todo:[], doing:[], done:[] },
+      settings: { wl: { name:"MMP Planning", subtitle:"Pilotage atelier", icon:"M", accent:"#0066ff", radius:16, overlay:50, blur:12, theme:"light" }, config:{showKpi:true, showActivity:true} },
+      presence: {}
+    };
+    let currentTrig = "", currentPin = "", draggedCard = null;
+
+    /* 🔐 LOGIN */
+    function typePin(n) { if(currentPin.length < 4) { currentPin += n; updatePin(); } }
+    function clearPin() { currentPin = ""; updatePin(); }
+    function updatePin() { document.getElementById('pin-display').textContent = "•".repeat(currentPin.length) || "••••"; }
+    
+    // Écouteur propre pour le trigramme
+    document.addEventListener('DOMContentLoaded', () => {
+      const trigInput = document.getElementById('trig-input');
+      if(trigInput) {
+        trigInput.addEventListener('input', e => {
+          currentTrig = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+          e.target.value = currentTrig;
+        });
+        trigInput.focus();
+      }
+    });
+
+    function login() {
+      const user = S.accounts[currentTrig];
+      if (user && user.pin === currentPin) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app-screen').style.display = 'flex';
+        showToast(`✅ Bienvenue ${user.name || currentTrig}`);
+        renderAll();
+      } else {
+        showToast('🔒 Trigramme ou PIN incorrect', 'error');
+        clearPin();
+      }
+    }
+
+    /* 🎨 WHITE-LABEL */
+    function applyWL() {
+      const w = S.settings.wl, r = document.documentElement.style;
+      r.setProperty('--accent', w.accent); r.setProperty('--radius', w.radius+'px');
+      r.setProperty('--wl-overlay', (w.overlay/100).toFixed(2)); r.setProperty('--wl-blur', w.blur+'px');
+      document.title = w.name; document.body.dataset.theme = w.theme||'light';
+      document.getElementById('wl-icon-display').textContent = w.icon; document.getElementById('header-icon').textContent = w.icon;
+      document.getElementById('wl-title-display').textContent = w.name; document.getElementById('header-title').textContent = w.name;
+      document.getElementById('header-sub').textContent = w.subtitle; document.getElementById('wl-sub-display').textContent = w.subtitle;
+      document.getElementById('wl-name').value = w.name; document.getElementById('wl-subtitle').value = w.subtitle;
+      document.getElementById('wl-icon').value = w.icon; document.getElementById('wl-accent').value = w.accent;
+      document.getElementById('wl-radius').value = w.radius; document.getElementById('radius-val').textContent = w.radius+'px';
+      document.getElementById('wl-overlay').value = w.overlay; document.getElementById('overlay-val').textContent = w.overlay+'%';
+      document.getElementById('wl-blur').value = w.blur; document.getElementById('blur-val').textContent = w.blur+'px';
+      document.querySelectorAll('.theme-preset').forEach(t=>t.classList.toggle('active',t.dataset.preset===(w.theme||'light')));
+    }
+    function saveWL() {
+      S.settings.wl.name = document.getElementById('wl-name').value||"MMP Planning";
+      S.settings.wl.subtitle = document.getElementById('wl-subtitle').value;
+      S.settings.wl.icon = document.getElementById('wl-icon').value.toUpperCase().replace(/[^A-Z]/g,'')||"M";
+      S.settings.wl.accent = document.getElementById('wl-accent').value;
+      S.settings.wl.radius = parseInt(document.getElementById('wl-radius').value);
+      S.settings.wl.overlay = parseInt(document.getElementById('wl-overlay').value);
+      S.settings.wl.blur = parseInt(document.getElementById('wl-blur').value);
+      S.settings.wl.theme = document.querySelector('.theme-preset.active')?.dataset.preset||'light';
+      localStorage.setItem('mmp-wl', JSON.stringify(S.settings.wl));
+      applyWL(); showToast('✅ Apparence enregistrée');
+    }
+    function resetWL() { if(confirm('Réinitialiser ?')){localStorage.removeItem('mmp-wl');location.reload();} }
+
+    /* 👥 GESTION UTILISATEURS */
+    function renderUsers() {
+      const el = document.getElementById('user-list');
+      const users = Object.entries(S.accounts);
+      if(!users.length){el.innerHTML='<p style="color:var(--text-secondary);font-size:12px;">Aucun compte</p>';return;}
+      el.innerHTML = users.map(([trig, u]) => `
+        <div class="list-item" style="padding:10px;">
+          <div class="list-icon" style="width:32px;height:32px;font-size:13px;background:var(--accent-light);color:var(--accent);">${trig}</div>
+          <div class="list-content"><div class="list-title">${u.name||trig}</div><div class="list-meta">PIN: ${'•'.repeat(u.pin.length)} | ${u.role}</div></div>
+          ${trig!=='ADMIN'?`<button class="btn danger" style="padding:4px 8px;font-size:11px;" onclick="deleteUser('${trig}')">🗑</button>`:''}
+        </div>`).join('');
+    }
+    function addUser() {
+      const trig = document.getElementById('new-trig').value.toUpperCase().replace(/[^A-Z]/g,'');
+      const pin = document.getElementById('new-pin').value;
+      const name = document.getElementById('new-name').value;
+      const role = document.getElementById('new-role').value;
+      if(!trig||trig.length<2||!pin||pin.length<4){showToast('⚠️ Trigramme (min 2) et PIN (4 chiffres) requis','error');return;}
+      if(S.accounts[trig]){showToast('⚠️ Trigramme déjà utilisé','error');return;}
+      S.accounts[trig] = { pin, role, name: name||trig };
+      localStorage.setItem('mmp-accounts', JSON.stringify(S.accounts));
+      renderUsers(); showToast(`✅ ${trig} ajouté`);
+      ['new-trig','new-name','new-pin'].forEach(i=>document.getElementById(i).value='');
+    }
+    function deleteUser(trig) {
+      if(confirm(`Supprimer ${trig} ?`)){
+        delete S.accounts[trig];
+        localStorage.setItem('mmp-accounts', JSON.stringify(S.accounts));
+        renderUsers(); showToast('🗑 Compte supprimé');
+      }
+    }
+
+    /* 💾 SAVE/LOAD */
+    function saveAllState() { localStorage.setItem('mmp-full', JSON.stringify(S)); showToast('💾 Tout enregistré','success'); }
+    function loadAllState() { 
+      try {
+        const s=localStorage.getItem('mmp-full'); if(s) Object.assign(S, JSON.parse(s));
+        const wl=localStorage.getItem('mmp-wl'); if(wl) S.settings.wl = {...S.settings.wl, ...JSON.parse(wl)};
+        const ac=localStorage.getItem('mmp-accounts'); if(ac) S.accounts = JSON.parse(ac);
+      } catch(e){}
+    }
+    function exportData() { const b=new Blob([JSON.stringify(S)],{type:'application/json'}), a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=`MMP_Export_${new Date().toISOString().split('T')[0]}.json`; a.click(); showToast('📤 Exporté'); }
+    function importData() { document.getElementById('import-file').click(); }
+    function importJSON(input) { const f=input.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{ try { const d=JSON.parse(e.target.result); Object.assign(S,d); S.ofs=d.ofs||S.ofs; S.settings=d.settings||S.settings; S.accounts=d.accounts||S.accounts; saveAllState(); applyWL(); renderUsers(); renderAll(); showToast('📥 Importé'); } catch(e){ showToast('❌ Fichier invalide','error'); } }; r.readAsText(f); }
+
+    /* 🧭 NAV & UI */
+    function setupNav() {
+      document.querySelectorAll('.nav-tab,.bottom-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          const v=btn.dataset.view;
+          document.querySelectorAll('.nav-tab,.bottom-btn').forEach(b=>b.classList.remove('active'));
+          document.querySelectorAll(`[data-view="${v}"]`).forEach(b=>b.classList.add('active'));
+          document.querySelectorAll('.view').forEach(vw=>vw.classList.remove('active'));
+          document.getElementById('view-'+v).classList.add('active');
+        });
+      });
+      document.querySelectorAll('.admin-tab-btn').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          document.querySelectorAll('.admin-tab-btn').forEach(b=>b.classList.remove('active'));
+          document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));
+          btn.classList.add('active'); document.getElementById(btn.dataset.admin).classList.add('active');
+          if(btn.dataset.admin==='tab-users') renderUsers();
+        });
+      });
+      document.querySelectorAll('.theme-preset').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          S.settings.wl.theme=btn.dataset.preset; document.body.dataset.theme=btn.dataset.preset;
+          document.querySelectorAll('.theme-preset').forEach(t=>t.classList.toggle('active',t.dataset.preset===btn.dataset.preset));
+          applyWL();
+        });
+      });
+    }
+    function toggleAdmin(){document.getElementById('admin-panel').classList.toggle('open');document.getElementById('admin-overlay').classList.toggle('visible');}
+    function openModal(id){document.getElementById(id).classList.add('active');}
+    function closeModal(id){document.getElementById(id).classList.remove('active');}
+    function showToast(msg,type='success'){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+type;setTimeout(()=>t.classList.remove('show'),2500);}
+
+    /* 📊 RENDER */
+    function renderAll(){renderOF();renderKanban();renderKPI();renderActivity();}
+    function renderOF(){
+      const l=document.getElementById('of-list'),arr=Object.values(S.ofs||{});
+      if(!arr.length){l.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-secondary);">Aucun OF créé</div>';return;}
+      l.innerHTML=arr.map(of=>`<div class="list-item"><div class="list-icon" style="background:var(--accent-light);color:var(--accent);">⚙</div><div class="list-content"><div class="list-title">${of.id}</div><div class="list-meta">${of.zone||'-'} • ${of.op||'-'}</div></div><span class="badge ${of.status==='done'?'success':of.status==='late'?'danger':'info'}">${of.status==='done'?'Terminé':of.status==='late'?'Retard':'En cours'}</span><button class="btn danger" onclick="deleteOF('${of.id}')" style="padding:5px 7px;font-size:12px;">🗑</button></div>`).join('');
+    }
+    function renderKanban(){
+      const cols=[{k:'todo',l:'📥 À faire'},{k:'doing',l:'🔨 En cours'},{k:'done',l:'✅ Terminé'}];
+      document.getElementById('kanban-board').innerHTML=cols.map(c=>`<div class="kanban-col" ondragover="e=>e.preventDefault()" ondrop="e=>dropCard(e,'${c.k}')"><div class="kanban-header"><span class="kanban-title">${c.l} <span class="kanban-count">${S.kanban[c.k].length}</span></span></div>${S.kanban[c.k].map(card=>`<div class="kanban-card" draggable="true" ondragstart="e=>dragStart(e,'${c.k}','${card.id}')" id="card-${card.id}"><div class="kanban-card-title">${card.title}</div><div class="kanban-card-meta"><span>${card.zone||'-'}</span><span class="badge info">${card.op||'-'}</span></div></div>`).join('')}<button class="btn ghost" style="width:100%;margin-top:7px;justify-content:center;font-size:12px;" onclick="addKanban('${c.k}')">+ Ajouter</button></div>`).join('');
+    }
+    function renderKPI(){const arr=Object.values(S.ofs||{});document.getElementById('kpi-ongoing').textContent=arr.filter(o=>o.status==='ongoing').length;document.getElementById('kpi-done').textContent=arr.filter(o=>o.status==='done').length;document.getElementById('kpi-late').textContent=arr.filter(o=>o.status==='late').length;}
+    function renderActivity(){const el=document.getElementById('recent-activity'),arr=Object.values(S.ofs||{});if(!arr.length){el.innerHTML='<p style="font-size:12px;">Aucune activité</p>';return;}el.innerHTML=arr.slice(-4).reverse().map(of=>`<div class="list-item" style="padding:10px;"><div class="list-icon" style="width:28px;height:28px;border-radius:7px;font-size:12px;background:var(--accent-light);color:var(--accent);">⚙</div><div class="list-content"><div class="list-title" style="font-size:12px;">${of.id}</div><div class="list-meta">${of.zone||'-'}</div></div><span class="badge ${of.status==='done'?'success':'info'}" style="font-size:9px;">${of.status==='done'?'OK':'Nouveau'}</span></div>`).join('');}
+
+    /* 🛠️ ACTIONS */
+    function addOF(){const id=document.getElementById('of-id').value||'OF-'+Date.now();S.ofs[id]={id,zone:document.getElementById('of-zone').value||'-',op:document.getElementById('of-op').value||'',status:'ongoing',ts:Date.now()};S.kanban.todo.push({id,title:id,zone:S.ofs[id].zone,op:S.ofs[id].op});closeModal('of-modal');renderAll();showToast('✅ OF créé');['of-id','of-zone','of-op'].forEach(i=>document.getElementById(i).value='');}
+    function deleteOF(id){delete S.ofs[id];S.kanban.todo=S.kanban.todo.filter(c=>c.id!==id);S.kanban.doing=S.kanban.doing.filter(c=>c.id!==id);S.kanban.done=S.kanban.done.filter(c=>c.id!==id);renderAll();showToast('🗑 OF supprimé');}
+    function addKanban(col){const t=prompt('Titre ?');if(t){S.kanban[col].push({id:'c-'+Date.now(),title:t,zone:'-',op:'-'});renderKanban();}}
+    function dragStart(e,col,id){draggedCard={col,id};e.target.classList.add('dragging');}
+    function dropCard(e,targetCol){e.preventDefault();if(!draggedCard)return;const card=S.kanban[draggedCard.col].find(c=>c.id===draggedCard.id);if(card){S.kanban[draggedCard.col]=S.kanban[draggedCard.col].filter(c=>c.id!==draggedCard.id);S.kanban[targetCol].push(card);renderKanban();}draggedCard=null;}
+
+    /* 🚀 INIT */
+    document.addEventListener('DOMContentLoaded',()=>{
+      loadAllState();applyWL();setupNav();renderUsers();
+      document.querySelectorAll('.range-val').forEach(v=>{const id=v.id.replace('-val','');document.getElementById(id)?.addEventListener('input',e=>v.textContent=e.target.value+(id==='radius'?'px':'%'));});
+      document.getElementById('wl-radius').addEventListener('input',e=>document.documentElement.style.setProperty('--radius',e.target.value+'px'));
+    });
+  </script>
+</body>
+</html>
